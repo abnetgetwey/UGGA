@@ -313,7 +313,12 @@
                         <div id="donation-progress-bar" style="width: 0%; background:var(--accent); height:100%; transition: width 0.5s;"></div>
                     </div>
                     <p class="text-right mt-2"><strong id="donation-percent-text">0%</strong> Raised</p>
-                    <button class="btn mt-4" onclick="openDonationModal()">Donate Now</button>
+                    
+                    <div class="flex flex-col gap-2 mt-4">
+                        <button class="btn" onclick="openDonationModal()">Donate Now</button>
+                        <!-- NEW: Payment Receiver Button -->
+                        <button id="btn-tele-receiver" class="btn btn-outline hidden">💬 Pay via Telegram</button>
+                    </div>
                 </div>
             </section>
 
@@ -488,6 +493,11 @@
                         <label>Bank Name</label><input type="text" id="don-bank-input">
                         <label>Account Name</label><input type="text" id="don-acc-name-input">
                         <label>Account Number</label><input type="text" id="don-acc-num-input">
+                        
+                        <!-- NEW: Payment Receiver (Telegram) Input -->
+                        <label>Payment Receiver (Telegram Link)</label>
+                        <input type="text" id="don-tele-input" placeholder="https://t.me/username">
+
                         <button class="btn mt-4" onclick="adminUpdateDonations()">Update</button>
                     </div>
                 </div>
@@ -1172,6 +1182,7 @@
             loadAdminDashboard();
         };
 
+        // FIXED: User Management Search Logic
         window.renderUserManagementList = async () => {
             const search = document.getElementById('admin-user-search').value.toLowerCase();
             const tbody = document.querySelector('#admin-users-table tbody');
@@ -1181,17 +1192,28 @@
             const snap = await getDocs(q);
             tbody.innerHTML = '';
 
+            let hasResults = false;
+
             snap.forEach(d => {
                 const u = d.data();
-                if(search && !u.name.toLowerCase().includes(search) && !u.username.toLowerCase().includes(search)) return;
+                
+                // Safe access to prevent errors if fields are undefined
+                const userName = (u.name || "").toLowerCase();
+                const userUsername = (u.username || "").toLowerCase();
 
+                // Check search condition safely
+                if (search && !userName.includes(search) && !userUsername.includes(search)) {
+                    return; 
+                }
+
+                hasResults = true;
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${u.name}</td>
-                    <td>${u.username}</td>
-                    <td>${u.phone}</td>
-                    <td>${u.dept}</td>
-                    <td>${u.batch}</td>
+                    <td>${u.name || '-'}</td>
+                    <td>${u.username || '-'}</td>
+                    <td>${u.phone || '-'}</td>
+                    <td>${u.dept || '-'}</td>
+                    <td>${u.batch || '-'}</td>
                     <td>
                         <button class="btn-sm btn-outline" onclick="openEditUserModal('${d.id}')">Edit</button>
                         <button class="btn-sm btn-danger" onclick="adminDeleteUser('${d.id}')">Del</button>
@@ -1199,6 +1221,10 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            if(!hasResults && search) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center p-4">No users found matching search.</td></tr>';
+            }
         };
 
         window.openEditUserModal = async (userId) => {
@@ -1600,7 +1626,8 @@
                 percent: document.getElementById('don-percent-input').value,
                 bank: document.getElementById('don-bank-input').value,
                 accName: document.getElementById('don-acc-name-input').value,
-                accNum: document.getElementById('don-acc-num-input').value
+                accNum: document.getElementById('don-acc-num-input').value,
+                telegram: document.getElementById('don-tele-input').value // NEW: Save Telegram
             };
             await setDoc(doc(db, "settings", "donations"), data);
             showToast("Donation Info Updated");
@@ -1646,6 +1673,7 @@
                 document.getElementById('don-bank-input').value = d.bank || '';
                 document.getElementById('don-acc-name-input').value = d.accName || '';
                 document.getElementById('don-acc-num-input').value = d.accNum || '';
+                document.getElementById('don-tele-input').value = d.telegram || ''; // NEW: Load Telegram
             }
             const quoteSnap = await getDoc(doc(db, "settings", "general"));
             if(quoteSnap.exists() && quoteSnap.data().quote) {
@@ -1710,6 +1738,8 @@
                 container.innerHTML += `<div class="card mb-2"><h4>${e.title}</h4><p>${e.date} | ${e.location}</p></div>`;
             });
         }
+        
+        // NEW: Load Donations including Telegram Receiver
         async function loadDonations() {
             const docRef = doc(db, "settings", "donations");
             const docSnap = await getDoc(docRef);
@@ -1721,8 +1751,20 @@
                 document.getElementById('don-modal-bank').textContent = d.bank || "N/A";
                 document.getElementById('don-modal-name').textContent = d.accName || "N/A";
                 document.getElementById('don-modal-num').textContent = d.accNum || "N/A";
+
+                // Payment Receiver Logic
+                const teleLink = d.telegram || '';
+                const teleBtn = document.getElementById('btn-tele-receiver');
+                
+                if(teleLink) {
+                    teleBtn.classList.remove('hidden');
+                    teleBtn.onclick = () => window.open(teleLink, '_blank');
+                } else {
+                    teleBtn.classList.add('hidden');
+                }
             }
         }
+        
         window.openDonationModal = () => { document.getElementById('donation-modal').classList.remove('hidden'); };
         window.copyToClipboard = () => {
             const text = document.getElementById('don-modal-num').textContent;
