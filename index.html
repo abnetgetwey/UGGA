@@ -13,7 +13,6 @@
     <!-- Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <!-- HTML5-QRCode for Real Scanning -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
     <style>
@@ -44,6 +43,7 @@
         .text-center { text-align: center; }
         .mb-2 { margin-bottom: 0.5rem; }
         .mb-4 { margin-bottom: 1rem; }
+        .mt-2 { margin-top: 0.5rem; }
         .mt-4 { margin-top: 1rem; }
         .p-4 { padding: 1rem; }
         .gap-2 { gap: 0.5rem; }
@@ -94,19 +94,6 @@
         .video-9-16 { position: relative; padding-bottom: 177%; height: 0; width: 100%; max-width: 400px; }
         .responsive-iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
         
-        /* FIX: TikTok Full Side Blocker - Prevents clicking Related Videos/Share/Music */
-        .tiktok-wrapper { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 999; }
-        .tiktok-side-blocker {
-            position: absolute; 
-            top: 0; 
-            right: 0; 
-            width: 90px;  /* Width of the TikTok UI sidebar */
-            height: 100%; 
-            z-index: 1000; 
-            pointer-events: auto; /* Catch clicks */
-            background: transparent; 
-        }
-
         .telegram-link-card { display: flex; align-items: center; gap: 15px; padding: 20px; background: #f9f9f9; border-radius: 8px; width: 100%; }
         .telegram-icon { font-size: 2rem; }
 
@@ -139,11 +126,18 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         .close-modal { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
         
-        /* Specific UI */
         .filter-group { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: left; border: 1px solid #eee; }
-        .checkbox-label { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; font-size: 0.9rem; }
         .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+        .checkbox-label { display: flex; align-items: center; gap: 5px; font-size: 0.9rem; cursor: pointer; }
 
+        /* Dynamic Form Builder Styles */
+        .form-builder-row {
+            display: flex; gap: 10px; align-items: flex-end; margin-bottom: 15px; 
+            padding-bottom: 15px; border-bottom: 1px dashed #ccc;
+        }
+        .field-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border: 1px solid #eee; margin-bottom: 5px; border-radius: 4px; }
+        
         @media (min-width: 768px) {
             body { padding-bottom: 0; padding-left: 260px; }
             .bottom-nav { width: 260px; height: 100vh; flex-direction: column; justify-content: flex-start; padding-top: 80px; left: 0; top: 0; align-items: stretch; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
@@ -151,7 +145,6 @@
             .nav-icon-bottom { display: inline-block; font-size: 1.2rem; margin: 0; }
             main { max-width: 1100px; }
         }
-        
     </style>
 </head>
 <body>
@@ -164,17 +157,44 @@
                 <p><strong>Name:</strong> <span id="scan-res-name">...</span></p>
                 <p><strong>Username:</strong> <span id="scan-res-user">...</span></p>
             </div>
+            
             <div class="text-left mb-4">
+                <!-- Step 1: Main Type Selection -->
                 <label style="font-weight:600; display:block; margin-bottom:5px;">Attendance Type:</label>
-                <select id="attend-type-select">
+                <select id="attend-main-type-select">
                     <option value="general">General Attendance</option>
                     <option value="event">Specific Event Attendance</option>
                 </select>
+
+                <!-- Branch A: General Category Selection -->
+                <div id="general-selector-container" class="mt-2">
+                    <label style="font-weight:600; display:block; margin-bottom:5px;">Select Program:</label>
+                    <select id="general-cat-select">
+                        <option value="prayer">የጸሎት መርሃግብር </option>
+                        <option value="hymn">የመዝሙር መርሃግብር </option>
+                        <option value="course">የኮርስ መርሃግብር </option>
+                        <option value="discussion">የውይይት መርሃግብር </option>
+                        <option value="drink">የእመቤታችን ጽዋ መርሃግብር </option>
+                    </select>
+
+                    <!-- Branch A-Sub: Course Year Selection (Hidden by default) -->
+                    <div id="year-selector-container" class="hidden mt-2">
+                        <label style="font-weight:600; display:block; margin-bottom:5px;">Select Year:</label>
+                        <select id="year-select">
+                            <option value="አንደኛ አመት">አንደኛ አመት (First Year)</option>
+                            <option value="ሁለተኛ አመት">ሁለተኛ አመት (Second Year)</option>
+                            <option value="ሶስተኛ አመት">ሶስተኛ አመት (Third Year)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Branch B: Event Selection (Hidden by default) -->
                 <div id="event-selector-container" class="hidden mt-2">
                     <label style="font-weight:600;">Select Event:</label>
                     <select id="scan-event-select"><option value="" disabled selected>Loading Events...</option></select>
                 </div>
             </div>
+
             <div class="flex gap-4">
                 <button class="btn btn-danger" onclick="cancelScan()">Cancel</button>
                 <button class="btn" onclick="confirmAttendance()">Confirm</button>
@@ -212,33 +232,18 @@
             <span class="close-modal" onclick="closeEditUserModal()">&times;</span>
             <h3>Edit User</h3>
             <input type="hidden" id="edit-user-id">
-            <div class="form-grid">
-                <div><label>Full Name</label><input type="text" id="edit-user-name"></div>
-                <div><label>Father's Name</label><input type="text" id="edit-user-father"></div>
-                <div><label>Grandfather's Name</label><input type="text" id="edit-user-grand"></div>
-                <div><label>Phone</label><input type="text" id="edit-user-phone"></div>
-                <div><label>Username</label><input type="text" id="edit-user-username"></div>
-                <div><label>New Password</label><input type="text" id="edit-user-pass" placeholder="Leave blank to keep"></div>
+            <div id="edit-user-form-container">
+                <!-- Dynamic fields will be injected here -->
             </div>
-            <label>Department</label>
-            <select id="edit-user-dept">
-                <option value="Computer Science">Computer Science</option>
-                <option value="Accounting">Accounting</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Sociology">Sociology</option>
-                <option value="Management">Management</option>
-                <option value="Marketing Management">Marketing Management</option>
-                <option value="Nursing">Nursing</option>
-                <option value="Other">Other</option>
-            </select>
-            <label>Batch</label>
-            <select id="edit-user-batch"></select>
+            <label>New Password</label>
+            <input type="text" id="edit-user-pass" placeholder="Leave blank to keep">
             <button class="btn mt-4" onclick="saveEditedUser()">Save Changes</button>
         </div>
     </div>
 
     <header>
         <div class="logo-area">
+            <!-- LOGO IMAGE RESTORED FOR HEADER -->
             <img src="https://z-cdn-media.chatglm.cn/files/af2b52e8-28bb-42d1-8143-70ff395ce21d.png?auth_key=1868311909-954d65bd85e94c1d8b22c71d5e4f1faa-0-680d18d7fe421e862301185b8304a28a" alt="Logo" class="logo-img">
             <div>
                 <div class="app-title">Unity Gebigubae</div>
@@ -250,6 +255,7 @@
     <!-- Auth Section -->
     <section id="view-auth" class="card" style="max-width: 450px; margin: 50px auto;">
         <div class="text-center mb-4">
+             <!-- LOGO IMAGE RESTORED FOR LOGIN PAGE -->
             <img src="https://z-cdn-media.chatglm.cn/files/af2b52e8-28bb-42d1-8143-70ff395ce21d.png?auth_key=1868311909-954d65bd85e94c1d8b22c71d5e4f1faa-0-680d18d7fe421e862301185b8304a28a" alt="Logo" style="width: 80px; height: 80px;">
         </div>
         <div id="form-login">
@@ -261,24 +267,9 @@
         </div>
         <div id="form-register" class="hidden">
             <h2 class="mb-4 text-center">Sign Up</h2>
-            <input type="text" id="reg-name" placeholder="Full Name">
-            <input type="text" id="reg-father" placeholder="Father's Name">
-            <input type="text" id="reg-grand" placeholder="Grandfather's Name">
-            <input type="tel" id="reg-phone" placeholder="Phone Number">
-            <input type="text" id="reg-username" placeholder="Create Username">
-            <input type="password" id="reg-password" placeholder="Create Password">
-            <select id="reg-dept">
-                <option value="" disabled selected>Select Department</option>
-                <option value="Computer Science">Computer Science</option>
-                <option value="Accounting">Accounting</option>
-                <option value="Civil Engineering">Civil Engineering</option>
-                <option value="Sociology">Sociology</option>
-                <option value="Management">Management</option>
-                <option value="Marketing Management">Marketing Management</option>
-                <option value="Nursing">Nursing</option>
-                <option value="Other">Other</option>
-            </select>
-            <select id="reg-batch"></select>
+            <div id="register-form-fields">
+                <!-- Dynamic fields injected here -->
+            </div>
             <button class="btn" onclick="handleRegister()">Register</button>
             <p class="mt-4 text-center"><a href="#" onclick="toggleAuth('login')" style="color: var(--primary);">Back to Login</a></p>
         </div>
@@ -327,57 +318,32 @@
             </section>
 
             <!-- View: Profile -->
-            <!-- View: Profile -->
-<section id="view-profile" class="view-section hidden">
-    <h2 class="mb-4">My Profile</h2>
-    <div class="card">
-        <label>Full Name</label>
-        <input type="text" id="edit-name">
-        
-        <label>Username</label>
-        <input type="text" id="edit-username">
-        
-        <label>Phone Number</label>
-        <input type="text" id="edit-phone">
-        
-        <label>Change Password</label>
-        <input type="password" id="edit-old-pass" placeholder="Old Password (leave blank to keep)">
-        <input type="password" id="edit-new-pass" placeholder="New Password">
-        
-        <!-- UPDATED: Now Editable Selects -->
-        <label>Department</label>
-        <select id="edit-dept">
-            <option value="Computer Science">Computer Science</option>
-            <option value="Accounting">Accounting</option>
-            <option value="Civil Engineering">Civil Engineering</option>
-            <option value="Sociology">Sociology</option>
-            <option value="Management">Management</option>
-            <option value="Marketing Management">Marketing Management</option>
-            <option value="Nursing">Nursing</option>
-            <option value="Other">Other</option>
-        </select>
-        
-        <label>Batch</label>
-        <select id="edit-batch">
-            <!-- Populated by JS below -->
-        </select>
-        <!-- END UPDATED -->
+            <section id="view-profile" class="view-section hidden">
+                <h2 class="mb-4">My Profile</h2>
+                <div class="card">
+                    <div id="profile-form-container">
+                        <!-- Dynamic fields -->
+                    </div>
+                    <label>Change Password</label>
+                    <input type="password" id="edit-old-pass" placeholder="Old Password (leave blank to keep)">
+                    <input type="password" id="edit-new-pass" placeholder="New Password">
+                    <button class="btn mt-4" onclick="updateProfile()">Update Profile</button>
+                </div>
 
-        <button class="btn mt-4" onclick="updateProfile()">Update Profile</button>
-    </div>
+                <!-- Generate ID Card Button -->
+                <button class="btn btn-outline mt-4" onclick="generateIDCard()">🆔 Generate ID Card (Image)</button>
 
-    <!-- QR & History remain the same -->
-    <div class="card mt-4">
-        <h3>My Attendance QR</h3>
-        <p class="text-sm text-light mb-2">Show this code for scanning.</p>
-        <div class="qr-display" id="user-qr-code"><span>Loading...</span></div>
-    </div>
-    <div class="card mt-4">
-        <h3>Attendance History</h3>
-        <div id="attendance-history-list"><p>Loading attendance...</p></div>
-    </div>
-    <button class="btn btn-danger mt-4" onclick="logout()">Logout</button>
-</section>
+                <div class="card mt-4">
+                    <h3>My Attendance QR</h3>
+                    <p class="text-sm text-light mb-2">Show this code for scanning.</p>
+                    <div class="qr-display" id="user-qr-code"><span>Loading...</span></div>
+                </div>
+                <div class="card mt-4">
+                    <h3>Attendance History</h3>
+                    <div id="attendance-history-list"><p>Loading attendance...</p></div>
+                </div>
+                <button class="btn btn-danger mt-4" onclick="logout()">Logout</button>
+            </section>
 
             <!-- =========================================
                  ADMIN DASHBOARD
@@ -390,12 +356,13 @@
                 
                 <div class="admin-tabs">
                     <div class="a-tab active" onclick="switchAdminTab('overview')">Overview</div>
-                    <div class="a-tab" onclick="switchAdminTab('user-mgmt')">User Management</div>
+                    <div class="a-tab" onclick="switchAdminTab('user-mgmt')">User Mgmt</div>
                     <div class="a-tab" onclick="switchAdminTab('attendance')">Attendance</div>
-                    <div class="a-tab" onclick="switchAdminTab('data')">Data Retrieval</div>
+                    <div class="a-tab" onclick="switchAdminTab('data')">Data</div>
                     <div class="a-tab" onclick="switchAdminTab('media')">Media</div>
                     <div class="a-tab" onclick="switchAdminTab('events')">Events</div>
                     <div class="a-tab" onclick="switchAdminTab('donations')">Donations</div>
+                    <div class="a-tab" onclick="switchAdminTab('form-builder')">Form Builder</div>
                     <div class="a-tab" onclick="switchAdminTab('settings')">Settings</div>
                 </div>
 
@@ -410,30 +377,13 @@
                     <button class="btn btn-outline" onclick="exportPDF()">📄 Export Full Report (PDF)</button>
                 </div>
 
-                <!-- User Management (NEW) -->
+                <!-- User Management -->
                 <div id="admin-user-mgmt" class="admin-section hidden">
                     <div class="card">
                         <h3>Add New User</h3>
-                        <div class="form-grid">
-                            <input type="text" id="admin-add-name" placeholder="Full Name">
-                            <input type="text" id="admin-add-father" placeholder="Father's Name">
-                            <input type="text" id="admin-add-grand" placeholder="Grandfather's Name">
-                            <input type="tel" id="admin-add-phone" placeholder="Phone Number">
-                            <input type="text" id="admin-add-username" placeholder="Username">
-                            <input type="password" id="admin-add-pass" placeholder="Password">
+                        <div id="admin-add-user-container">
+                            <!-- Dynamic fields injected here -->
                         </div>
-                        <select id="admin-add-dept">
-                            <option value="" disabled selected>Select Department</option>
-                            <option value="Computer Science">Computer Science</option>
-                            <option value="Accounting">Accounting</option>
-                            <option value="Civil Engineering">Civil Engineering</option>
-                            <option value="Sociology">Sociology</option>
-                            <option value="Management">Management</option>
-                            <option value="Marketing Management">Marketing Management</option>
-                            <option value="Nursing">Nursing</option>
-                            <option value="Other">Other</option>
-                        </select>
-                        <select id="admin-add-batch"></select>
                         <button class="btn mt-4" onclick="adminAddUser()">Add User</button>
                     </div>
 
@@ -445,7 +395,7 @@
                         </div>
                         <div class="table-responsive">
                             <table id="admin-users-table">
-                                <thead><tr><th>Name</th><th>Father</th><th>Username</th><th>Phone</th><th>Dept</th><th>Batch</th><th>Actions</th></tr></thead>
+                                <thead><tr><th>Name</th><th>Username</th><th>Phone</th><th>Dept</th><th>Batch</th><th>Actions</th></tr></thead>
                                 <tbody></tbody>
                             </table>
                         </div>
@@ -469,47 +419,34 @@
                     </div>
                 </div>
 
-                <!-- Data Retrieval (UPDATED) -->
+                <!-- Data Retrieval (Dynamic Filters & Checkboxes) -->
                 <div id="admin-data" class="admin-section hidden">
                     <div class="card">
                         <h3>Data Retrieval & Filtering</h3>
                         
+                        <!-- Dynamic Search Filters -->
                         <div class="filter-group">
-                            <h4>User Database Filters</h4>
-                            <div class="form-grid">
-                                <input type="text" id="filter-name" placeholder="Name (Contains)">
-                                <input type="text" id="filter-father" placeholder="Father's Name">
-                            </div>
-                            <div class="form-grid">
-                                <input type="text" id="filter-grand" placeholder="Grandfather's Name">
-                                <input type="text" id="filter-username" placeholder="Username">
-                            </div>
-                            <div class="form-grid">
-                                <select id="filter-batch">
-                                    <option value="">All Batches</option>
-                                    <!-- Populated by JS -->
-                                </select>
-                                <select id="filter-dept">
-                                    <option value="">All Departments</option>
-                                    <option value="Computer Science">Computer Science</option>
-                                    <option value="Accounting">Accounting</option>
-                                    <option value="Civil Engineering">Civil Engineering</option>
-                                    <option value="Sociology">Sociology</option>
-                                    <option value="Management">Management</option>
-                                    <option value="Marketing Management">Marketing Management</option>
-                                    <option value="Nursing">Nursing</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <button class="btn mt-2" onclick="retrieveFilteredData()">🔍 Retrieve Data</button>
+                            <h4>Search Criteria</h4>
+                            <p class="text-sm text-light mb-2">Enter values for fields you want to search by. Leave others empty.</p>
+                            <div id="dynamic-filters-container" class="form-grid"></div>
                         </div>
+
+                        <!-- Dynamic Column Checkboxes -->
+                        <div class="filter-group">
+                            <h4>Select Columns to Display</h4>
+                            <div id="dynamic-checkboxes-container" class="checkbox-group"></div>
+                        </div>
+
+                        <button class="btn" onclick="retrieveFilteredData()">🔍 Retrieve Data</button>
                     </div>
                     <div class="card">
                         <div class="flex justify-between items-center mb-2">
                             <h4>Results</h4>
                             <button class="btn-sm btn-outline" onclick="exportCurrentTable()">📄 Export PDF</button>
                         </div>
-                        <div id="data-results-container" class="table-responsive"></div>
+                        <div id="data-results-container" class="table-responsive">
+                            <div class="text-center p-4 text-light">No data retrieved yet.</div>
+                        </div>
                     </div>
                 </div>
 
@@ -517,7 +454,6 @@
                 <div id="admin-media" class="admin-section hidden">
                     <div class="card">
                         <h3>Add Media</h3>
-                        <p class="text-sm text-light">TikTok links must be from @UnityGebiguba.</p>
                         <select id="media-type">
                             <option value="youtube">YouTube</option>
                             <option value="telegram">Telegram Link</option>
@@ -553,6 +489,53 @@
                         <label>Account Name</label><input type="text" id="don-acc-name-input">
                         <label>Account Number</label><input type="text" id="don-acc-num-input">
                         <button class="btn mt-4" onclick="adminUpdateDonations()">Update</button>
+                    </div>
+                </div>
+
+                <!-- FORM BUILDER (CRUD Logic Fixed) -->
+                <div id="admin-form-builder" class="admin-section hidden">
+                    <div class="card">
+                        <h3>Sign Up Form Builder</h3>
+                        <p class="text-sm text-light mb-4">Add, Edit, or Delete fields that appear on User Registration page.</p>
+                        
+                        <div class="form-builder-row">
+                            <input type="hidden" id="fb-doc-id">
+                            <div style="flex:2">
+                                <label>Label Text</label>
+                                <input type="text" id="fb-label" placeholder="e.g. Father's Name">
+                            </div>
+                            <div style="flex:1">
+                                <label>Field ID (Key)</label>
+                                <input type="text" id="fb-id" placeholder="e.g. father">
+                            </div>
+                            <div style="flex:1">
+                                <label>Type</label>
+                                <select id="fb-type" onchange="toggleFbOptions()">
+                                    <option value="text">Text</option>
+                                    <option value="tel">Phone</option>
+                                    <option value="select">Dropdown</option>
+                                    <option value="date">Date</option>
+                                    <option value="password">Password</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="fb-options-container" class="hidden mb-4">
+                            <label>Options (Comma separated)</label>
+                            <input type="text" id="fb-options" placeholder="Option A, Option B, Option C">
+                        </div>
+
+                        <div class="flex justify-between items-center mb-4">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" id="fb-required" style="width:auto; margin:0;"> Required Field
+                            </label>
+                            <button id="fb-save-btn" class="btn btn-sm" onclick="adminSaveFormField()">+ Add Field</button>
+                        </div>
+
+                        <h4>Current Fields</h4>
+                        <div id="form-fields-list">
+                            <div class="text-center text-light p-4">Loading fields...</div>
+                        </div>
                     </div>
                 </div>
 
@@ -609,7 +592,7 @@
         let html5QrcodeScanner = null;
         let scannedUserRef = null;
         let currentExportData = [];
-        let allUsersCache = [];
+        let formSchema = []; // Global cache for form fields
 
         try {
             const app = initializeApp(firebaseConfig);
@@ -664,45 +647,244 @@
             return match ? match[1] : null;
         }
 
-        window.onload = async () => {
-            // Populate Batches
-             const batches = ['reg-batch', 'edit-batch', 'admin-add-batch', 'filter-batch']; // Added 'edit-batch' here
-    const currentYear = new Date().getFullYear(); 
-    
-    batches.forEach(id => {
-        const sel = document.getElementById(id);
-        if(sel) {
-            for (let i = 2000; i <= currentYear + 8; i++) {
-                const opt = document.createElement('option');
-                opt.value = i;
-                opt.textContent = i;
-                sel.appendChild(opt);
+        // --- DYNAMIC FORM SYSTEM ---
+        
+        async function seedDefaultFormFields() {
+            const snap = await getDocs(query(collection(db, "form_fields"), orderBy("order")));
+            if (!snap.empty) return; 
+
+            console.log("Seeding default form fields...");
+            const defaults = [
+                { label: "Full Name", id: "name", type: "text", required: true, order: 1 },
+                { label: "Father's Name", id: "father", type: "text", required: false, order: 2 },
+                { label: "Grandfather's Name", id: "grand", type: "text", required: false, order: 3 },
+                { label: "Phone Number", id: "phone", type: "tel", required: true, order: 4 },
+                { label: "Username", id: "username", type: "text", required: true, order: 5 },
+                { label: "Password", id: "password", type: "password", required: true, order: 6 },
+                { label: "Department", id: "dept", type: "select", options: "Computer Science,Accounting,Civil Engineering,Sociology,Management,Marketing Management,Nursing,Other", required: true, order: 7 },
+                { label: "Batch", id: "batch", type: "select", options: "Auto", required: true, order: 8 } 
+            ];
+
+            for(const f of defaults) {
+                await addDoc(collection(db, "form_fields"), f);
             }
         }
-            });
 
-            await ensureAdminExists();
-            const savedUser = localStorage.getItem('ug_user_session');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                isAdmin = currentUser.isAdmin || false;
-                showApp();
+        async function loadFormSchema() {
+            const snap = await getDocs(query(collection(db, "form_fields"), orderBy("order")));
+            formSchema = [];
+            snap.forEach(d => {
+                formSchema.push({ ...d.data(), docId: d.id });
+            });
+        }
+
+        function renderFormFields(containerId, values = {}, prefix = "reg-") {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+
+            formSchema.forEach(field => {
+                const wrapper = document.createElement('div');
+                
+                const label = document.createElement('label');
+                label.textContent = field.label + (field.required ? " *" : "");
+                wrapper.appendChild(label);
+
+                if (field.id === 'batch' && field.type === 'select') {
+                    const sel = document.createElement('select');
+                    sel.id = prefix + field.id;
+                    sel.required = field.required;
+                    if(values[field.id]) sel.value = values[field.id];
+                    const currentYear = new Date().getFullYear();
+                    for(let i = 2000; i <= currentYear + 8; i++){
+                        const opt = document.createElement('option');
+                        opt.value = i;
+                        opt.textContent = i;
+                        sel.appendChild(opt);
+                    }
+                    wrapper.appendChild(sel);
+                } else if (field.type === 'select') {
+                    const sel = document.createElement('select');
+                    sel.id = prefix + field.id;
+                    sel.required = field.required;
+                    if(values[field.id]) sel.value = values[field.id];
+                    if(field.options) {
+                        field.options.split(',').forEach(optText => {
+                            const opt = document.createElement('option');
+                            opt.value = optText.trim();
+                            opt.textContent = optText.trim();
+                            sel.appendChild(opt);
+                        });
+                    }
+                    wrapper.appendChild(sel);
+                } else {
+                    const inp = document.createElement('input');
+                    inp.type = field.type;
+                    inp.id = prefix + field.id;
+                    inp.placeholder = field.label;
+                    inp.required = field.required;
+                    if(values[field.id]) inp.value = values[field.id];
+                    wrapper.appendChild(inp);
+                }
+                container.appendChild(wrapper);
+            });
+        }
+
+        window.toggleFbOptions = () => {
+            const type = document.getElementById('fb-type').value;
+            document.getElementById('fb-options-container').classList.toggle('hidden', type !== 'select');
+        };
+
+        // --- FORM BUILDER CRUD LOGIC (FIXED RENDER CALL) ---
+
+        window.adminEditFormField = (docId) => {
+            const field = formSchema.find(f => f.docId === docId);
+            if(!field) return;
+            
+            // Populate inputs
+            document.getElementById('fb-doc-id').value = docId;
+            document.getElementById('fb-label').value = field.label;
+            document.getElementById('fb-id').value = field.id;
+            document.getElementById('fb-type').value = field.type;
+            document.getElementById('fb-options').value = field.options || '';
+            document.getElementById('fb-required').checked = field.required;
+            
+            toggleFbOptions();
+            
+            // UI Change
+            const btn = document.getElementById('fb-save-btn');
+            btn.textContent = "Update Field";
+            btn.style.backgroundColor = '#e67e22'; 
+            btn.style.color = 'white';
+        };
+
+        window.resetFormBuilder = () => {
+            document.getElementById('fb-doc-id').value = '';
+            document.getElementById('fb-label').value = '';
+            document.getElementById('fb-id').value = '';
+            document.getElementById('fb-options').value = '';
+            document.getElementById('fb-required').checked = false;
+            
+            const btn = document.getElementById('fb-save-btn');
+            btn.textContent = "+ Add Field";
+            btn.style.backgroundColor = '';
+            btn.style.color = '';
+        };
+
+        window.adminSaveFormField = async () => {
+            const docId = document.getElementById('fb-doc-id').value;
+            const label = document.getElementById('fb-label').value;
+            const id = document.getElementById('fb-id').value.trim();
+            const type = document.getElementById('fb-type').value;
+            const options = document.getElementById('fb-options').value;
+            const required = document.getElementById('fb-required').checked;
+
+            if(!label || !id) return showToast("Label and ID are required");
+
+            // Check ID uniqueness (skip check if we are editing SAME ID)
+            const idConflict = formSchema.find(f => f.id === id && f.docId !== docId);
+            if(idConflict) return showToast("Field ID must be unique");
+
+            const data = { label, id, type, options, required };
+
+            if(docId) {
+                // UPDATE
+                await updateDoc(doc(db, "form_fields", docId), data);
+                showToast("Field Updated!");
+            } else {
+                // CREATE
+                const order = formSchema.length + 1;
+                await addDoc(collection(db, "form_fields"), { ...data, order });
+                showToast("Field Added");
+            }
+            
+            resetFormBuilder();
+            await loadFormSchema(); 
+            renderFormBuilderList(); 
+        };
+
+        window.adminDeleteFormField = async (docId) => {
+            if(confirm("Delete this field? It will be removed from registration form.")) {
+                await deleteDoc(doc(db, "form_fields", docId));
+                showToast("Field Deleted");
+                await loadFormSchema();
+                renderFormBuilderList();
+            }
+        };
+
+        function renderFormBuilderList() {
+            const list = document.getElementById('form-fields-list');
+            list.innerHTML = '';
+            if(formSchema.length === 0) {
+                list.innerHTML = '<div class="text-center text-light p-4">No fields defined yet.</div>';
+                return;
             }
 
-            document.getElementById('attend-type-select').addEventListener('change', (e) => {
-                const eventDiv = document.getElementById('event-selector-container');
-                if(e.target.value === 'event') {
-                    eventDiv.classList.remove('hidden');
-                    loadEventsIntoModal();
-                } else {
-                    eventDiv.classList.add('hidden');
-                }
+            formSchema.forEach(f => {
+                const div = document.createElement('div');
+                div.className = 'field-item';
+                div.innerHTML = `
+                    <div>
+                        <strong>${f.label}</strong> <small>(${f.id})</small><br>
+                        <span class="text-light" style="font-size:0.8rem">${f.type} ${f.required ? '| Required' : ''}</span>
+                    </div>
+                    <div>
+                        <button class="btn-sm btn-outline" style="margin-right:5px;" onclick="adminEditFormField('${f.docId}')">Edit</button>
+                        <button class="btn-sm btn-danger" onclick="adminDeleteFormField('${f.docId}')">Del</button>
+                    </div>
+                `;
+                list.appendChild(div);
             });
+        }
+
+
+        // --- MAIN APP LOGIC ---
+
+        window.onload = async () => {
+             await ensureAdminExists();
+             await seedDefaultFormFields(); 
+             await loadFormSchema(); 
+
+             const savedUser = localStorage.getItem('ug_user_session');
+             if (savedUser) {
+                 currentUser = JSON.parse(savedUser);
+                 isAdmin = currentUser.isAdmin || false;
+                 showApp();
+             } else {
+                 document.getElementById('view-auth').classList.remove('hidden');
+             }
+
+             // LISTENER FOR MAIN ATTENDANCE TYPE (General vs Event)
+             document.getElementById('attend-main-type-select').addEventListener('change', (e) => {
+                 const generalDiv = document.getElementById('general-selector-container');
+                 const eventDiv = document.getElementById('event-selector-container');
+                 
+                 if(e.target.value === 'general') {
+                     generalDiv.classList.remove('hidden');
+                     eventDiv.classList.add('hidden');
+                 } else {
+                     generalDiv.classList.add('hidden');
+                     eventDiv.classList.remove('hidden');
+                     loadEventsIntoModal();
+                 }
+             });
+
+             // LISTENER FOR GENERAL CATEGORY (Course Year Logic)
+             document.getElementById('general-cat-select').addEventListener('change', (e) => {
+                 const yearDiv = document.getElementById('year-selector-container');
+                 if(e.target.value === 'course') {
+                     yearDiv.classList.remove('hidden');
+                 } else {
+                     yearDiv.classList.add('hidden');
+                 }
+             });
         };
 
         window.toggleAuth = (mode) => {
             document.getElementById('form-login').classList.toggle('hidden', mode !== 'login');
             document.getElementById('form-register').classList.toggle('hidden', mode !== 'register');
+            if(mode === 'register') {
+                renderFormFields('register-form-fields', {}, 'reg-');
+            }
         };
 
         window.handleLogin = async () => {
@@ -744,21 +926,39 @@
         };
 
         window.handleRegister = async () => {
-            const name = document.getElementById('reg-name').value;
-            const father = document.getElementById('reg-father').value;
-            const grand = document.getElementById('reg-grand').value;
-            const phone = document.getElementById('reg-phone').value;
-            const username = document.getElementById('reg-username').value;
-            const password = document.getElementById('reg-password').value;
-            const dept = document.getElementById('reg-dept').value;
-            const batch = document.getElementById('reg-batch').value;
-            if (!name || !phone || !dept || !batch || !username || !password) return showToast("Please fill all required fields");
-            const q = query(collection(db, "users"), where("username", "==", username));
-            const snap = await getDocs(q);
-            if(!snap.empty) return showToast("Username already taken");
+            const newData = {};
+            let isValid = true;
 
-            const passwordHash = await hashPassword(password);
-            await addDoc(collection(db, "users"), { name, father, grand, phone, dept, batch, username, passwordHash, createdAt: new Date().toISOString() });
+            for(const field of formSchema) {
+                const el = document.getElementById('reg-' + field.id);
+                if(!el) continue;
+                
+                const val = el.value.trim();
+                if(field.required && !val) {
+                    showToast(`${field.label} is required`);
+                    isValid = false;
+                    break;
+                }
+                
+                if(field.type === 'password') {
+                    newData['passwordHash'] = await hashPassword(val);
+                } else {
+                    newData[field.id] = val;
+                }
+            }
+
+            if(!isValid) return;
+
+            if(newData.username) {
+                const q = query(collection(db, "users"), where("username", "==", newData.username));
+                const snap = await getDocs(q);
+                if(!snap.empty) return showToast("Username already taken");
+            }
+
+            await addDoc(collection(db, "users"), { 
+                ...newData, 
+                createdAt: new Date().toISOString() 
+            });
             showToast("Registration Successful!");
             toggleAuth('login');
         };
@@ -779,7 +979,10 @@
             const navBtn = Array.from(document.querySelectorAll('.nav-item')).find(b => b.getAttribute('onclick')?.includes(view));
             if (navBtn) navBtn.classList.add('active');
 
-            if (view === 'profile' && !isAdmin) loadAttendanceHistory();
+            if (view === 'profile' && !isAdmin) {
+                renderFormFields('profile-form-container', currentUser, 'edit-');
+                loadAttendanceHistory();
+            }
             if (view === 'media' && !isAdmin) loadUserMedia();
             if (view !== 'admin' && (html5QrcodeScanner && html5QrcodeScanner.isScanning)) {
                 stopScanner();
@@ -802,7 +1005,8 @@
                 nav.appendChild(btn);
                 loadAdminDashboard();
                 checkAdminNotifications();
-                renderUserManagementList(); // Load list on init
+                renderUserManagementList(); 
+                renderFormBuilderList(); 
 
                 const adminRef = doc(db, "admin_auth", "main");
                 const snap = await getDoc(adminRef);
@@ -813,39 +1017,157 @@
                 loadUserMedia();
                 loadUserEvents();
                 loadDonations();
-                document.getElementById('edit-name').value = currentUser.name;
-                document.getElementById('edit-username').value = currentUser.username;
-                document.getElementById('edit-phone').value = currentUser.phone;
-                document.getElementById('edit-dept').value = currentUser.dept;
-                document.getElementById('edit-batch').value = currentUser.batch;
+                
                 const qrData = `${currentUser.username}-${currentUser.id}`;
                 document.getElementById('user-qr-code').innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrData)}" alt="QR">`;
             }
             router('home');
         }
 
-        // --- ADMIN USER MANAGEMENT ---
-        window.adminAddUser = async () => {
-            const name = document.getElementById('admin-add-name').value;
-            const father = document.getElementById('admin-add-father').value;
-            const grand = document.getElementById('admin-add-grand').value;
-            const phone = document.getElementById('admin-add-phone').value;
-            const username = document.getElementById('admin-add-username').value;
-            const password = document.getElementById('admin-add-pass').value;
-            const dept = document.getElementById('admin-add-dept').value;
-            const batch = document.getElementById('admin-add-batch').value;
+        window.generateIDCard = async () => {
+            if(!currentUser) return showToast("User data not found");
 
-            if(!name || !username || !password || !dept) return showToast("Name, User, Pass, Dept required");
+            showToast("Generating ID Card...");
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const width = 1010; 
+            const height = 638; 
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.fillStyle = '#2c3e50'; 
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#F9B233';
+            ctx.fillRect(0, 0, width, 15);
+            ctx.fillRect(0, height - 15, width, 15);
+
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#F9B233'; 
+            ctx.font = 'bold 50px "Noto Sans Ethiopic", sans-serif'; 
+            ctx.fillText("ዩኒቲ ግቢ-ጉባኤ", width / 2, 130);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 30px Poppins, sans-serif';
+            ctx.fillText("UNITY GEBIGUBAE", width / 2, 180);
+            ctx.font = 'italic 18px Poppins, sans-serif';
+            ctx.fillText("Official Member ID", width / 2, 205);
+
+            ctx.strokeStyle = '#F9B233';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(100, 230);
+            ctx.lineTo(width - 100, 230);
+            ctx.stroke();
+
+            ctx.textAlign = 'left';
+            ctx.font = '28px Arial';
+            let yPos = 300;
+            const leftMargin = 80;
+            const lineHeight = 40;
+
+            const displayFields = [
+                { label: "Name", val: currentUser.name },
+                { label: "Father", val: currentUser.father },
+                { label: "Dept", val: currentUser.dept },
+                { label: "Batch", val: currentUser.batch },
+            ];
+
+            displayFields.forEach(item => {
+                if(item.val) {
+                    ctx.fillStyle = '#F9B233';
+                    ctx.fillText(item.label + ":", leftMargin, yPos);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(item.val, leftMargin + 100, yPos);
+                    yPos += lineHeight;
+                }
+            });
+
+            const qrData = `${currentUser.username}-${currentUser.id}`;
+            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
             
-            const q = query(collection(db, "users"), where("username", "==", username));
-            const snap = await getDocs(q);
-            if(!snap.empty) return showToast("Username taken");
+            try {
+                const qrImg = await loadImage(qrApiUrl);
+                const qrSize = 180;
+                const qrX = width - qrSize - 60;
+                const qrY = height - qrSize - 60;
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(qrX - 5, qrY - 5, qrSize + 10, qrSize + 10);
+                ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+                
+                ctx.fillStyle = '#aaaaaa';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText("SCAN FOR VERIFICATION", qrX + qrSize/2, qrY + qrSize + 25);
+            } catch (err) {
+                console.error("QR Failed", err);
+            }
 
-            const passHash = await hashPassword(password);
-            await addDoc(collection(db, "users"), { name, father, grand, phone, dept, batch, username, passwordHash: passHash });
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `${currentUser.username}_ID_Card.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast("ID Card Image Saved!");
+            } catch (e) {
+                console.error(e);
+                showToast("Error generating image");
+            }
+        };
+
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.src = url;
+                img.onload = () => resolve(img);
+                img.onerror = (e) => reject(e);
+            });
+        }
+
+        window.adminAddUser = async () => {
+            const newData = {};
+            let isValid = true;
+            const prefix = 'admin-add-';
+
+            for(const field of formSchema) {
+                const el = document.getElementById(prefix + field.id);
+                if(!el) continue;
+                const val = el.value.trim();
+                
+                if(field.required && !val) {
+                    showToast(`${field.label} is required`);
+                    isValid = false;
+                    break;
+                }
+                
+                if(field.type === 'password') {
+                    newData['passwordHash'] = await hashPassword(val);
+                } else {
+                    newData[field.id] = val;
+                }
+            }
+            if(!isValid) return;
+
+            if(newData.username) {
+                const q = query(collection(db, "users"), where("username", "==", newData.username));
+                const snap = await getDocs(q);
+                if(!snap.empty) return showToast("Username taken");
+            }
+
+            await addDoc(collection(db, "users"), newData);
             showToast("User Added Successfully");
-            // Clear fields
-            ['admin-add-name', 'admin-add-father', 'admin-add-grand', 'admin-add-phone', 'admin-add-username', 'admin-add-pass'].forEach(id => document.getElementById(id).value = '');
+            
+            formSchema.forEach(f => {
+                const el = document.getElementById(prefix + f.id);
+                if(el) el.value = '';
+            });
+
             renderUserManagementList();
             loadAdminDashboard();
         };
@@ -853,7 +1175,7 @@
         window.renderUserManagementList = async () => {
             const search = document.getElementById('admin-user-search').value.toLowerCase();
             const tbody = document.querySelector('#admin-users-table tbody');
-            tbody.innerHTML = '<tr><td colspan="7">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
 
             const q = query(collection(db, "users"));
             const snap = await getDocs(q);
@@ -866,7 +1188,6 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${u.name}</td>
-                    <td>${u.father || '-'}</td>
                     <td>${u.username}</td>
                     <td>${u.phone}</td>
                     <td>${u.dept}</td>
@@ -885,14 +1206,7 @@
             if(userDoc.exists()) {
                 const u = userDoc.data();
                 document.getElementById('edit-user-id').value = userId;
-                document.getElementById('edit-user-name').value = u.name;
-                document.getElementById('edit-user-father').value = u.father || '';
-                document.getElementById('edit-user-grand').value = u.grand || '';
-                document.getElementById('edit-user-phone').value = u.phone;
-                document.getElementById('edit-user-username').value = u.username;
-                document.getElementById('edit-user-pass').value = '';
-                document.getElementById('edit-user-dept').value = u.dept;
-                document.getElementById('edit-user-batch').value = u.batch;
+                renderFormFields('edit-user-form-container', u, 'edit-user-');
                 document.getElementById('edit-user-modal').classList.remove('hidden');
             }
         };
@@ -903,24 +1217,22 @@
 
         window.saveEditedUser = async () => {
             const userId = document.getElementById('edit-user-id').value;
-            const name = document.getElementById('edit-user-name').value;
-            const father = document.getElementById('edit-user-father').value;
-            const grand = document.getElementById('edit-user-grand').value;
-            const phone = document.getElementById('edit-user-phone').value;
-            const username = document.getElementById('edit-user-username').value;
             const newPass = document.getElementById('edit-user-pass').value;
-            const dept = document.getElementById('edit-user-dept').value;
-            const batch = document.getElementById('edit-user-batch').value;
+            const updateData = {};
+            const prefix = 'edit-user-';
 
-            const updateData = { name, father, grand, phone, dept, batch, username };
-
-            // Check Username collision if changed
-            // (Simplified: assuming admin checks manually or username rarely changes. For robust app, check against others)
+            for(const field of formSchema) {
+                const el = document.getElementById(prefix + field.id);
+                if(el) {
+                    if (field.id === 'password') continue; 
+                    updateData[field.id] = el.value;
+                }
+            }
 
             if(newPass) {
                 updateData.passwordHash = await hashPassword(newPass);
             }
-
+            
             await updateDoc(doc(db, "users", userId), updateData);
             showToast("User Updated");
             closeEditUserModal();
@@ -936,14 +1248,11 @@
             }
         };
 
-        // --- DATA RETRIEVAL (FILTERING & COUNTS) ---
         async function calculateAttendanceData(usersSnap) {
-            // Fetch all attendance
             const genAtt = await getDocs(collection(db, "attendance_general"));
             const evtAtt = await getDocs(collection(db, "attendance_events"));
             
-            // Count unique days per user
-            const counts = {}; // { userId: { gen: Set(), evt: Set() } }
+            const counts = {}; 
             
             genAtt.forEach(d => {
                 const uid = d.data().userId;
@@ -959,7 +1268,6 @@
                 counts[uid].evt.add(dateStr);
             });
 
-            // Attach to users
             const result = [];
             usersSnap.forEach(uDoc => {
                 const u = uDoc.data();
@@ -977,86 +1285,103 @@
 
         window.retrieveFilteredData = async () => {
             const container = document.getElementById('data-results-container');
-            container.innerHTML = '<div class="text-center p-4">Calculating Attendance & Filtering...</div>';
+            container.innerHTML = '<div class="text-center p-4">Retrieving Data...</div>';
 
-            const fName = document.getElementById('filter-name').value.toLowerCase();
-            const fFather = document.getElementById('filter-father').value.toLowerCase();
-            const fGrand = document.getElementById('filter-grand').value.toLowerCase();
-            const fUser = document.getElementById('filter-username').value.toLowerCase();
-            const fBatch = document.getElementById('filter-batch').value;
-            const fDept = document.getElementById('filter-dept').value;
+            // 1. Gather Search Criteria from dynamic inputs
+            const searchCriteria = {};
+            let hasSearch = false;
+            formSchema.forEach(field => {
+                const el = document.getElementById('search-' + field.id);
+                if(el && el.value.trim() !== '') {
+                    searchCriteria[field.id] = el.value.trim().toLowerCase();
+                    hasSearch = true;
+                }
+            });
 
-            // 1. Get Users with Attendance Counts
+            // 2. Gather Checked Columns
+            const checkedFields = formSchema.filter(f => {
+                const chk = document.getElementById('chk-' + f.id);
+                return chk && chk.checked;
+            });
+
+            // 3. Fetch & Filter Users
             const usersSnap = await getDocs(collection(db, "users"));
+            let filteredUsers = [];
+            usersSnap.forEach(d => {
+                const u = { ...d.data(), id: d.id };
+                
+                // Apply Search Filters
+                let match = true;
+                for(const key in searchCriteria) {
+                    const val = u[key] ? u[key].toLowerCase() : "";
+                    if(!val.includes(searchCriteria[key])) {
+                        match = false;
+                        break;
+                    }
+                }
+                if(match) filteredUsers.push(u);
+            });
+
+            // 4. Add Attendance Data
             const usersWithAtt = await calculateAttendanceData(usersSnap);
-
-            // 2. Filter
-            const filtered = usersWithAtt.filter(u => {
-                if(fName && !u.name.toLowerCase().includes(fName)) return false;
-                if(fFather && !u.father.toLowerCase().includes(fFather)) return false;
-                if(fGrand && !u.grand.toLowerCase().includes(fGrand)) return false;
-                if(fUser && !u.username.toLowerCase().includes(fUser)) return false;
-                if(fBatch && u.batch != fBatch) return false;
-                if(fDept && u.dept != fDept) return false;
-                return true;
-            });
-
-            // 3. Calculate Totals
-            let totalGen = 0, totalEvt = 0, totalAll = 0;
-            filtered.forEach(u => {
-                totalGen += u.genDays;
-                totalEvt += u.evtDays;
-                totalAll += u.totalDays;
-            });
-
-            // 4. Render
-            let html = `<table><thead><tr>
-                <th>Name</th><th>Father</th><th>Username</th><th>Dept</th><th>Batch</th>
-                <th>Gen Days</th><th>Event Days</th><th>Total Days</th>
-            </tr></thead><tbody>`;
+            // Map attendance back to filtered users
+            const attMap = {};
+            usersWithAtt.forEach(u => attMap[u.id] = u);
             
-            filtered.forEach(u => {
-                html += `<tr>
-                    <td>${u.name}</td>
-                    <td>${u.father || '-'}</td>
-                    <td>${u.username}</td>
-                    <td>${u.dept}</td>
-                    <td>${u.batch}</td>
-                    <td>${u.genDays}</td>
-                    <td>${u.evtDays}</td>
-                    <td style="font-weight:bold; color:var(--accent)">${u.totalDays}</td>
-                </tr>`;
+            const finalData = filteredUsers.map(u => ({
+                ...u,
+                genDays: (attMap[u.id] ? attMap[u.id].genDays : 0),
+                evtDays: (attMap[u.id] ? attMap[u.id].evtDays : 0),
+                totalDays: (attMap[u.id] ? attMap[u.id].totalDays : 0)
+            }));
+
+            // 5. Build Table
+            if(finalData.length === 0) {
+                container.innerHTML = '<div class="text-center p-4">No matching records found.</div>';
+                currentExportData = null;
+                return;
+            }
+
+            // Table Header
+            let html = `<table><thead><tr>`;
+            checkedFields.forEach(f => {
+                html += `<th>${f.label}</th>`;
+            });
+            html += `<th>Gen Days</th><th>Event Days</th><th>Total</th></tr></thead><tbody>`;
+            
+            // Table Body
+            finalData.forEach(u => {
+                html += `<tr>`;
+                checkedFields.forEach(f => {
+                    html += `<td>${u[f.id] || '-'}</td>`;
+                });
+                html += `<td>${u.genDays}</td><td>${u.evtDays}</td><td style="font-weight:bold; color:var(--accent)">${u.totalDays}</td>`;
+                html += `</tr>`;
             });
             
-            // Footer
-            html += `<tr class="total-row">
-                <td colspan="5" style="text-align:right;">Total Coming Days =</td>
-                <td>${totalGen}</td>
-                <td>${totalEvt}</td>
-                <td>${totalAll}</td>
-            </tr></tbody></table>`;
-
+            html += `</tbody></table>`;
             container.innerHTML = html;
 
-            // Prepare for export
+            // Prepare for Export (Include all checked fields + standard att fields)
             currentExportData = {
-                title: "Attendance Data Report",
-                headers: ["Name", "Father", "Username", "Dept", "Batch", "Gen Days", "Event Days", "Total Days"],
-                rows: filtered.map(u => [u.name, u.father||'-', u.username, u.dept, u.batch, u.genDays, u.evtDays, u.totalDays])
+                title: "Filtered Data Report",
+                headers: checkedFields.map(f => f.label).concat(["Gen Days", "Event Days", "Total"]),
+                rows: finalData.map(u => 
+                    checkedFields.map(f => u[f.id] || '-').concat([u.genDays, u.evtDays, u.totalDays])
+                )
             };
         };
 
         window.exportCurrentTable = () => {
-            if(!currentExportData || currentExportData.rows.length === 0) return showToast("No data");
+            if(!currentExportData || currentExportData.rows.length === 0) return showToast("No data to export");
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text(currentExportData.title, 14, 20);
             doc.autoTable(currentExportData.headers, currentExportData.rows, { startY: 30 });
-            doc.save(`Filtered_Attendance_${new Date().toISOString().split('T')[0]}.pdf`);
+            doc.save(`Filtered_Data_${new Date().toISOString().split('T')[0]}.pdf`);
             showToast("PDF Downloaded");
         };
 
-        // --- SCANNER LOGIC (As before) ---
         window.startScanner = () => {
             if(html5QrcodeScanner && html5QrcodeScanner.isScanning) return;
             html5QrcodeScanner = new Html5Qrcode("reader");
@@ -1085,6 +1410,13 @@
                 scannedUserRef = { id: userSnap.id, ...userSnap.data() };
                 document.getElementById('scan-res-name').textContent = scannedUserRef.name;
                 document.getElementById('scan-res-user').textContent = scannedUserRef.username;
+                
+                // Reset Modal Selections
+                document.getElementById('attend-main-type-select').value = "general";
+                document.getElementById('general-selector-container').classList.remove('hidden');
+                document.getElementById('event-selector-container').classList.add('hidden');
+                document.getElementById('year-selector-container').classList.add('hidden');
+                
                 document.getElementById('scan-result-modal').classList.remove('hidden');
             } else {
                 showToast("User not found"); startScanner();
@@ -1110,17 +1442,51 @@
         }
         window.confirmAttendance = async () => {
             if (!scannedUserRef) return;
-            const type = document.getElementById('attend-type-select').value;
+            const type = document.getElementById('attend-main-type-select').value;
+            
             if (type === 'general') {
-                await addDoc(collection(db, "attendance_general"), { userId: scannedUserRef.id, timestamp: new Date() });
+                // General Logic with Categories
+                const catSelect = document.getElementById('general-cat-select');
+                const yearSelect = document.getElementById('year-select');
+                
+                let categoryText = catSelect.options[catSelect.selectedIndex].text; // Full Amharic text
+                let catValue = catSelect.value;
+
+                // If Course selected, append year
+                if(catValue === 'course') {
+                    const yearText = yearSelect.options[yearSelect.selectedIndex].text;
+                    categoryText = categoryText + " - " + yearText;
+                }
+
+                await addDoc(collection(db, "attendance_general"), { 
+                    userId: scannedUserRef.id, 
+                    category: categoryText, // Store the full description
+                    timestamp: new Date() 
+                });
             } else {
+                // Event Logic
                 const eventId = document.getElementById('scan-event-select').value;
                 if(!eventId) return showToast("Select event");
                 const evtTitle = document.getElementById('scan-event-select').options[document.getElementById('scan-event-select').selectedIndex].text;
                 await addDoc(collection(db, "attendance_events"), { userId: scannedUserRef.id, eventId, eventTitle: evtTitle, timestamp: new Date() });
             }
             const list = document.getElementById('recent-scans-list');
-            list.innerHTML = `<div>✔ ${scannedUserRef.name} (${type})</div>` + list.innerHTML;
+            
+            // Construct display text
+            let displayType = type === 'general' ? "General" : "Event";
+            if(type === 'general') {
+                 const catSelect = document.getElementById('general-cat-select');
+                 const yearSelect = document.getElementById('year-select');
+                 let catName = catSelect.options[catSelect.selectedIndex].text.split('(')[0].trim(); // Shorten display
+                 if(catSelect.value === 'course') {
+                     catName += ` (${yearSelect.value})`;
+                 }
+                 displayType = catName;
+            } else {
+                displayType = document.getElementById('scan-event-select').value;
+            }
+
+            list.innerHTML = `<div>✔ ${scannedUserRef.name} <span style="color:var(--primary)">(${displayType})</span></div>` + list.innerHTML;
             showToast("Attendance Recorded");
             document.getElementById('scan-result-modal').classList.add('hidden');
             scannedUserRef = null;
@@ -1128,15 +1494,71 @@
             loadAdminDashboard();
         };
 
-        // --- REST OF FUNCTIONS (Media, Events, etc. from previous steps) ---
+        // --- FIXED TAB SWITCH LOGIC ---
         window.switchAdminTab = (tab) => {
             document.querySelectorAll('.admin-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('admin-' + tab).classList.remove('hidden');
             document.querySelectorAll('.a-tab').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
             stopScanner();
-            if(tab === 'user-mgmt') renderUserManagementList();
+
+            if(tab === 'user-mgmt') {
+                renderFormFields('admin-add-user-container', {}, 'admin-add-');
+                renderUserManagementList();
+            }
+            
+            if(tab === 'data') {
+                renderDataFiltersAndCheckboxes();
+                document.getElementById('data-results-container').innerHTML = '<div class="text-center p-4 text-light">No data retrieved yet.</div>';
+            }
+
+            // FIX: Force refresh when entering Form Builder
+            if(tab === 'form-builder') {
+                renderFormBuilderList();
+            }
         };
+
+        function renderDataFiltersAndCheckboxes() {
+            const filterContainer = document.getElementById('dynamic-filters-container');
+            const checkContainer = document.getElementById('dynamic-checkboxes-container');
+            
+            filterContainer.innerHTML = '';
+            checkContainer.innerHTML = '';
+
+            formSchema.forEach(field => {
+                // Skip password fields for search/display usually
+                if(field.type === 'password') return;
+
+                // 1. Create Search Input
+                const wrapper = document.createElement('div');
+                const label = document.createElement('label');
+                label.textContent = field.label;
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = 'search-' + field.id;
+                input.placeholder = 'Search ' + field.label;
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                filterContainer.appendChild(wrapper);
+
+                // 2. Create Checkbox
+                const checkWrapper = document.createElement('div');
+                checkWrapper.className = 'checkbox-label';
+                const chk = document.createElement('input');
+                chk.type = 'checkbox';
+                chk.id = 'chk-' + field.id;
+                chk.checked = true; 
+                chk.value = field.id;
+                
+                const chkLabel = document.createElement('span');
+                chkLabel.textContent = field.label;
+
+                checkWrapper.appendChild(chk);
+                checkWrapper.appendChild(chkLabel);
+                checkContainer.appendChild(checkWrapper);
+            });
+        }
+
         window.adminAddMedia = async () => {
             const type = document.getElementById('media-type').value;
             const title = document.getElementById('media-title').value;
@@ -1146,7 +1568,7 @@
                 const details = getTikTokDetails(url);
                 if (!details) return showToast("Invalid TikTok");
                 if(details.username.toLowerCase() !== 'unitygebigubae') {
-                    return alert(`TikTok video must be from @UnityGebiguba. This is from @${details.username}`);
+                    return alert(`TikTok video must be from @UnityGebiguba.`);
                 }
             }
             if(type === 'youtube' && !getYouTubeId(url)) return showToast("Invalid YouTube");
@@ -1206,7 +1628,6 @@
             document.getElementById('admin-pass-update').value = "";
         };
 
-        // Loading Helpers
         async function loadAdminDashboard() {
             const usersSnap = await getDocs(collection(db, "users"));
             document.getElementById('stat-users').textContent = usersSnap.size;
@@ -1251,7 +1672,6 @@
             });
         }
         
-        // User Frontend Helper
         async function loadUserMedia() {
             const snap = await getDocs(collection(db, "media"));
             const container = document.getElementById('media-feed-container');
@@ -1265,14 +1685,11 @@
                     if(id) card.innerHTML = `<div class="media-header">${data.title}</div><div class="responsive-iframe-container video-16-9"><iframe src="https://www.youtube.com/embed/${id}?rel=0" frameborder="0" allowfullscreen></iframe></div>`;
                 } else if(data.type === 'tiktok') {
                     const details = getTikTokDetails(data.url);
-                    // FIX APPLIED HERE: Added a full-height side blocker to mask the right column
                     if(details) {
                         card.innerHTML = `
                         <div class="media-header">${data.title}</div>
                         <div class="responsive-iframe-container video-9-16">
                             <iframe src="https://www.tiktok.com/embed/v2/${details.id}" frameborder="0" allowfullscreen sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
-                            <!-- Full-height side blocker to prevent clicking Related/Share/Music -->
-                            <div class="tiktok-side-blocker"></div>
                         </div>`;
                     }
                 } else if(data.type === 'instagram') {
@@ -1313,122 +1730,100 @@
             showToast("Copied!");
         };
         window.updateProfile = async () => {
-    const newName = document.getElementById('edit-name').value;
-    const newPhone = document.getElementById('edit-phone').value;
-    const newUser = document.getElementById('edit-username').value;
-    const oldPass = document.getElementById('edit-old-pass').value;
-    const newPass = document.getElementById('edit-new-pass').value;
+            const oldPass = document.getElementById('edit-old-pass').value;
+            const newPass = document.getElementById('edit-new-pass').value;
+            const updateData = {};
+            const prefix = 'edit-';
 
-    // NEW: Read Dept and Batch
-    const newDept = document.getElementById('edit-dept').value;
-    const newBatch = document.getElementById('edit-batch').value;
+            if (newPass) {
+                if(!oldPass) return showToast("Enter old password to change password");
+                const oldHash = await hashPassword(oldPass);
+                if(oldHash !== currentUser.passwordHash) return showToast("Old password incorrect");
+                updateData.passwordHash = await hashPassword(newPass);
+            }
 
-    // 1. Validate Password
-    if (newPass) {
-        if(!oldPass) return showToast("Enter old password to change password");
-        const oldHash = await hashPassword(oldPass);
-        if(oldHash !== currentUser.passwordHash) return showToast("Old password incorrect");
-    }
+            for(const field of formSchema) {
+                const el = document.getElementById(prefix + field.id);
+                if(el && field.id !== 'password') {
+                    const val = el.value;
+                    if(field.id === 'username' && val !== currentUser.username) {
+                        const q = query(collection(db, "users"), where("username", "==", val));
+                        const snap = await getDocs(q);
+                        if(!snap.empty) return showToast("Username already taken");
+                    }
+                    updateData[field.id] = val;
+                }
+            }
 
-    // 2. Check Username Uniqueness if changed
-    if(newUser !== currentUser.username) {
-        const q = query(collection(db, "users"), where("username", "==", newUser));
-        const snap = await getDocs(q);
-        if(!snap.empty) return showToast("Username already taken by another user");
-    }
-
-    // 3. Update Object (Includes Dept and Batch)
-    const updateData = { 
-        name: newName, 
-        phone: newPhone, 
-        username: newUser,
-        dept: newDept, // Added
-        batch: newBatch  // Added
-    };
-
-    if(newPass) {
-        updateData.passwordHash = await hashPassword(newPass);
-    }
-
-    const ref = doc(db, "users", currentUser.id);
-    await updateDoc(ref, updateData);
-    
-    // 4. Update Session Storage
-    currentUser = { ...currentUser, ...updateData };
-    localStorage.setItem('ug_user_session', JSON.stringify(currentUser));
-    
-    // Clear Password Fields
-    document.getElementById('edit-old-pass').value = '';
-    document.getElementById('edit-new-pass').value = '';
-    
-    showToast("Profile Updated Successfully!");
-};
+            const ref = doc(db, "users", currentUser.id);
+            await updateDoc(ref, updateData);
+            
+            currentUser = { ...currentUser, ...updateData };
+            localStorage.setItem('ug_user_session', JSON.stringify(currentUser));
+            
+            document.getElementById('edit-old-pass').value = '';
+            document.getElementById('edit-new-pass').value = '';
+            
+            showToast("Profile Updated Successfully!");
+        };
         async function loadAttendanceHistory() {
-    const list = document.getElementById('attendance-history-list');
-    
-    // Safety check
-    if(!currentUser || !currentUser.id) {
-        list.innerHTML = "<p>User session invalid. Please login again.</p>";
-        return;
-    }
-
-    list.innerHTML = "Loading...";
-
-    try {
-        // 1. Query both collections WITHOUT 'orderBy' to avoid Index errors
-        const qGen = query(collection(db, "attendance_general"), where("userId", "==", currentUser.id));
-        const qEvt = query(collection(db, "attendance_events"), where("userId", "==", currentUser.id));
-
-        // 2. Fetch data in parallel
-        const [snapGen, snapEvt] = await Promise.all([getDocs(qGen), getDocs(qEvt)]);
-
-        const allRecords = [];
-
-        // Process General Attendance
-        snapGen.forEach(d => {
-            const data = d.data();
-            // Ensure timestamp exists to avoid crashes
-            if (data.timestamp) {
-                allRecords.push({ 
-                    ...data, 
-                    typeDisplay: 'General', 
-                    date: data.timestamp.toDate() 
-                });
+            const list = document.getElementById('attendance-history-list');
+            
+            if(!currentUser || !currentUser.id) {
+                list.innerHTML = "<p>User session invalid. Please login again.</p>";
+                return;
             }
-        });
 
-        // Process Event Attendance
-        snapEvt.forEach(d => {
-            const data = d.data();
-            if (data.timestamp) {
-                allRecords.push({ 
-                    ...data, 
-                    typeDisplay: data.eventTitle || 'Event', 
-                    date: data.timestamp.toDate() 
+            list.innerHTML = "Loading...";
+
+            try {
+                const qGen = query(collection(db, "attendance_general"), where("userId", "==", currentUser.id));
+                const qEvt = query(collection(db, "attendance_events"), where("userId", "==", currentUser.id));
+
+                const [snapGen, snapEvt] = await Promise.all([getDocs(qGen), getDocs(qEvt)]);
+
+                const allRecords = [];
+
+                snapGen.forEach(d => {
+                    const data = d.data();
+                    if (data.timestamp) {
+                        allRecords.push({ 
+                            ...data, 
+                            typeDisplay: data.category || 'General', // Use category if available
+                            date: data.timestamp.toDate() 
+                        });
+                    }
                 });
+
+                snapEvt.forEach(d => {
+                    const data = d.data();
+                    if (data.timestamp) {
+                        allRecords.push({ 
+                            ...data, 
+                            typeDisplay: data.eventTitle || 'Event', 
+                            date: data.timestamp.toDate() 
+                        });
+                    }
+                });
+
+                allRecords.sort((a, b) => b.date - a.date);
+
+                if (allRecords.length === 0) {
+                    list.innerHTML = `<p><strong>Total Records: 0</strong></p><p>No attendance records found yet.</p>`;
+                } else {
+                    list.innerHTML = `<p><strong>Total Records: ${allRecords.length}</strong></p><ul style="margin-top:10px; padding-left:20px;">`;
+                    allRecords.forEach(r => {
+                        const dateStr = r.date.toLocaleDateString();
+                        list.innerHTML += `<li>${dateStr} - <span style="color:var(--primary)">${r.typeDisplay}</span></li>`;
+                    });
+                    list.innerHTML += "</ul>";
+                }
+
+            } catch (error) {
+                console.error("Error loading attendance history:", error);
+                list.innerHTML = `<p style="color:red;">Error loading history: ${error.message}</p>`;
             }
-        });
-
-        // 3. Sort in JavaScript (Newest first)
-        allRecords.sort((a, b) => b.date - a.date);
-
-        // 4. Render to HTML
-        if (allRecords.length === 0) {
-            list.innerHTML = `<p><strong>Total Records: 0</strong></p><p>No attendance records found yet.</p>`;
-        } else {
-            list.innerHTML = `<p><strong>Total Records: ${allRecords.length}</strong></p><ul style="margin-top:10px; padding-left:20px;">`;
-            allRecords.forEach(r => {
-                const dateStr = r.date.toLocaleDateString();
-                list.innerHTML += `<li>${dateStr} - <span style="color:var(--primary)">${r.typeDisplay}</span></li>`;
-            });
-            list.innerHTML += "</ul>";
         }
-
-    } catch (error) {
-        console.error("Error loading attendance history:", error);
-        list.innerHTML = `<p style="color:red;">Error loading history: ${error.message}</p>`;
-    }
-}
         async function loadUserNotifications() {
             const snap = await getDocs(query(collection(db, "notifications"), orderBy("timestamp", "desc"), limit(1)));
             if (!snap.empty) {
@@ -1441,15 +1836,12 @@
         }
         window.closeNotifModal = () => { document.getElementById('notif-modal').classList.add('hidden'); };
         
-        // --- FIX: Export PDF Function ---
         window.exportPDF = async () => {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
             doc.text("Unity Gebigubae - Full System Report", 14, 20);
             
-            // FIX: Await the getDocs call to resolve the promise
             const usersSnap = await getDocs(collection(db, "users"));
-            // FIX: Await the calculation
             const data = await calculateAttendanceData(usersSnap);
 
             const tableColumn = ["Name", "Username", "Dept", "Batch", "Gen Days", "Event Days", "Total"];
